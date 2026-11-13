@@ -1,0 +1,16 @@
+{
+  "name": "ttt-minimap",
+  "displayName": "Minimap",
+  "description": "VS Code-style braille minimap of the active buffer in a right-docked panel",
+  "version": "0.1.0",
+  "author": "Steve Greenley",
+  "entry": "plugin.lua",
+  "api": 2,
+  "permissions": {
+    "panel.bottom": true,
+    "commands": true,
+    "editor.read": true,
+    "events.editor": true,
+    "storage": true
+  }
+}
