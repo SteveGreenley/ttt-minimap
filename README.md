@@ -150,6 +150,10 @@ Tests drive the real binary headlessly through `--exec` with an isolated
 click-to-scroll, config loading, color persistence, install-path loading, and
 empty/large buffers.
 
+Agent-facing notes: `AGENTS.md` covers layout, verification and the non-obvious
+API traps; `HANDOFF.md` records the current status, next steps and the reasoning
+behind past decisions.
+
 ## License
 
 MIT.
