@@ -10,7 +10,36 @@ local ttt     = require("ttt")
 local editor  = require("ttt.editor")
 local events  = require("ttt.events")
 local storage = require("ttt.storage")
-local text    = require("ttt.text")
+
+-- ttt.text arrives in ttt 1.10.0. Older builds reject the module inside
+-- require(), which aborts this chunk: the plugin then stays disabled with no
+-- visible reason and "Enable" appears to do nothing. Register a panel that
+-- states the requirement instead.
+local has_text, text = pcall(require, "ttt.text")
+if not has_text then
+  local version = "unknown"
+  if type(ttt.version) == "function" then
+    local ok, v = pcall(ttt.version)
+    if ok and v then version = tostring(v) end
+  end
+  local message = string.format("Minimap needs ttt 1.10.0 or newer (this is %s)", version)
+  ttt.log("error", message)
+
+  ttt.register({
+    bottom = {
+      title = "Minimap",
+      render = function(panel)
+        panel:text(0, 0, message, "danger")
+      end,
+    },
+  })
+
+  -- 1.9.x has show_panel but not ttt.text; 1.8.x and older have neither.
+  if type(ttt.show_panel) == "function" then
+    ttt.set_timeout(200, function() pcall(ttt.show_panel, "bottom") end)
+  end
+  return
+end
 
 local CONFIG_KEY         = "config"
 local MAX_MEASURE_COLS   = 4000

@@ -12,9 +12,10 @@ scrolls the editor to that point.
 ## Requirements
 
 - ttt ≥ 1.10.0 (`ttt.text`, `ttt.debounce`, `ttt.show_panel`); tested with
-  v1.12.1.
-- On older builds the panel still registers, but the plugin cannot open it
-  automatically — select the **Minimap** tab manually.
+  v1.11.0 and v1.12.1.
+- On older builds the plugin still loads: the **Minimap** tab shows
+  `Minimap needs ttt 1.10.0 or newer (this is v1.7.1)` and nothing else renders.
+  Select the tab manually there — `ttt.show_panel` only exists from 1.9.0.
 
 ## Install
 
@@ -120,6 +121,20 @@ plugin config.
   puts it there on load); docked below the editor, clicks land on the wrong row.
 - **Shared panel.** The bottom panel hosts Terminal, Output and other plugin
   tabs; selecting another tab hides the minimap until you reselect it.
+
+## Troubleshooting
+
+**The Plugins list shows an empty circle and Enable does nothing.** ttt only
+marks a plugin enabled when its `Init` succeeds; a load error leaves it disabled
+and writes the reason to the **Output** panel (`ctrl+p` → `View: Toggle Panel` →
+**Output**, lines prefixed `[ttt-minimap]`). The usual cause is an old editor:
+`ttt.text` landed in ttt 1.10.0, so a 1.7.x build reports
+`module "ttt.text" is not available`. Run `ttt --version`; anything older than
+1.10.0 must be upgraded before this plugin can render.
+
+**Clicking the map scrolls to the wrong line.** The host reports absolute screen
+coordinates, so `click_top` has to match your chrome: set it to `3` if the menu
+bar is hidden (see Limitations).
 
 ## Development
 
