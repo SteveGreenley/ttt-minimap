@@ -4,7 +4,8 @@ A VS Code-style minimap for the [ttt](https://tttedit.dev) editor: a live,
 braille rendering of the active buffer in a narrow panel docked on the right.
 Each source line becomes one pixel row of Unicode braille (2×4 dots per terminal
 cell), so indentation and line length form the visible silhouette. The map fills
-the panel width and uses one gray from the active theme.
+the panel width and uses one gray from the active theme. Clicking the map
+scrolls the editor to that point.
 
 ## Requirements
 
@@ -22,8 +23,9 @@ git clone https://github.com/<owner>/ttt-minimap ~/.config/ttt/plugins/ttt-minim
 ```
 
 Or use **Plugins: Install from URL** with the repository URL. Either way, ttt
-asks you to approve exactly five permissions: `panel.bottom`, `commands`,
-`editor.read`, `events.editor`, `storage`.
+asks you to approve exactly six permissions: `panel.bottom`, `commands`,
+`editor.read`, `editor.write` (scrolling), `events.editor`, `storage`. An
+existing install prompts once more when the plugin gains `editor.write`.
 
 ## Use
 
@@ -31,6 +33,10 @@ The panel auto-opens on load, docks itself right, and keeps keyboard focus in
 the editor. Drag the divider between the editor and the panel to set the width;
 ttt remembers widths of 30 columns or more and resets anything narrower to its
 default.
+
+Left-click anywhere in the map to scroll the editor so the clicked point sits in
+the middle of the viewport. The caret does not move; clicking blank space below a
+short file's map scrolls to the last line.
 
 Commands:
 
@@ -68,7 +74,8 @@ State lives in `~/.config/ttt/state/plugins/ttt-minimap.json`:
     "show_cursor": true,
     "cursor_style": "default",
     "tab_width": 4,
-    "auto_open": true
+    "auto_open": true,
+    "click_top": 4
   }
 }
 ```
@@ -82,6 +89,7 @@ State lives in `~/.config/ttt/state/plugins/ttt-minimap.json`:
 | `cursor_style` | `muted`, `line`, `border`, `default` | Style for `◆` |
 | `tab_width` | 1–16 | Display width of a tab when measuring lines |
 | `auto_open` | boolean | Open and dock the panel on load |
+| `click_top` | 0–16 | Screen rows of chrome above the panel content, used to map a click to a map row |
 
 Colors are named theme styles, not hex values, so the map follows the active
 theme:
@@ -103,6 +111,11 @@ plugin config.
   divider around the map.
 - **Files over 20,000 lines are sampled**, one representative line per pixel row,
   instead of copying the whole buffer.
+- **Click mapping assumes ttt's default layout.** The host reports a click's
+  absolute screen row and exposes no panel origin, so the plugin subtracts
+  `click_top` (default 4: menu bar, top border, panel tab row, divider). Hide the
+  menu bar and set `click_top` to 3. The panel must stay docked right (the plugin
+  puts it there on load); docked below the editor, clicks land on the wrong row.
 - **Shared panel.** The bottom panel hosts Terminal, Output and other plugin
   tabs; selecting another tab hides the minimap until you reselect it.
 
@@ -116,8 +129,9 @@ make install-local # symlink this checkout into ~/.config/ttt/plugins/
 ```
 
 Tests drive the real binary headlessly through `--exec` with an isolated
-`TTT_CONFIG_DIR`, and cover rendering, live updates, viewport movement, config
-loading, color persistence, install-path loading, and empty/large buffers.
+`TTT_CONFIG_DIR`, and cover rendering, live updates, viewport movement,
+click-to-scroll, config loading, color persistence, install-path loading, and
+empty/large buffers.
 
 ## License
 

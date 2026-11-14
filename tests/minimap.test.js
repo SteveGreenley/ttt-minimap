@@ -118,6 +118,70 @@ test("moves the viewport indicator when scrolling", () => {
   }
 });
 
+test("clicking the minimap scrolls the editor to that point", () => {
+  try {
+    tui.start();
+    tui.cli("--plugin", PLUGIN, SAMPLE);
+    tui.wait(700);
+    const shot = tui.snapshot();
+    const before = tui.debug();
+    // Panel content row 0 sits at screen row 4: menu bar, top border, panel tab
+    // row, divider. These clicks land on map rows 5 and 15.
+    tui.click(70, 4 + 5);
+    tui.wait(300);
+    const first = tui.debug();
+    tui.click(70, 4 + 15);
+    tui.wait(300);
+    const second = tui.debug();
+    // Typing right after a click must still reach the editor: the panel never
+    // takes keyboard focus.
+    tui.type("Z");
+    tui.wait(200);
+    const typed = tui.debug();
+    const out = tui.run();
+
+    assert.equal(out.error, undefined, failure(out));
+
+    const lines = (out.read(shot) || "").split("\n");
+    const tabRow = lines.findIndex((line) => line.includes("Minimap"));
+    assert.ok(tabRow >= 0, "Minimap tab label missing");
+    assert.equal(tabRow + 2, 4, `panel content no longer starts at row 4: ${tabRow + 2}`);
+
+    const start = JSON.parse(out.read(before));
+    const mid = JSON.parse(out.read(first));
+    const last = JSON.parse(out.read(second));
+
+    // The debug dump reports 0-based viewport lines and cursor positions.
+    const shows = (viewport, line) =>
+      viewport.top_line <= line && line < viewport.top_line + viewport.height;
+
+    assert.equal(start.viewport.top_line, 0, "editor did not start at the top");
+    // One pixel row per source line for this 96-line fixture, so map row 5 is
+    // line index 20 and row 15 is index 60.
+    assert.ok(
+      shows(mid.viewport, 20),
+      `line 21 is not visible after the first click: ${JSON.stringify(mid.viewport)}`,
+    );
+    assert.ok(
+      last.viewport.top_line > mid.viewport.top_line,
+      `second click did not scroll further: ${JSON.stringify(last.viewport)}`,
+    );
+    assert.ok(
+      shows(last.viewport, 60),
+      `line 61 is not visible after the second click: ${JSON.stringify(last.viewport)}`,
+    );
+    assert.equal(last.cursor.line, start.cursor.line, "clicking the minimap moved the cursor");
+
+    const afterTyping = JSON.parse(out.read(typed));
+    assert.ok(
+      afterTyping.buffer.text.some((text) => text.includes("Z")),
+      "typing after a click did not reach the editor: the panel took focus",
+    );
+  } finally {
+    tui.cleanup();
+  }
+});
+
 test("reads the configured color", () => {
   try {
     // Installed path: ttt wires the plugin log before init, so the startup log

@@ -64,6 +64,10 @@ function type(text) {
   actions.push(`type ${JSON.stringify(text)}`);
 }
 
+function click(x, y) {
+  actions.push(`click ${x} ${y}`);
+}
+
 function exec(title) {
   actions.push(`exec ${JSON.stringify(title)}`);
 }
@@ -189,6 +193,7 @@ module.exports = {
   wait,
   key,
   type,
+  click,
   exec,
   snapshot,
   debug,

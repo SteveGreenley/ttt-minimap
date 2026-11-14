@@ -10,6 +10,7 @@
     "panel.bottom": true,
     "commands": true,
     "editor.read": true,
+    "editor.write": true,
     "events.editor": true,
     "storage": true
   }

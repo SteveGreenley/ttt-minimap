@@ -19,6 +19,11 @@ local CHANGE_DEBOUNCE_MS = 60
 local BAR_CHAR           = "▌"
 local CURSOR_CHAR        = "◆"
 
+-- Rows of editor chrome above the panel content in ttt's default layout: menu
+-- bar, top border, bottom-panel tab row, divider. on_event reports absolute
+-- screen coordinates, so a click is mapped back to a map row with this offset.
+local PANEL_TOP_ROWS     = 4
+
 local DEFAULTS = {
   color = "muted",
   show_viewport = true,
@@ -27,6 +32,7 @@ local DEFAULTS = {
   cursor_style = "default",
   tab_width = 4,
   auto_open = true,
+  click_top = PANEL_TOP_ROWS,
 }
 
 local GRAY_STYLES = { muted = true, line = true, border = true }
@@ -60,6 +66,10 @@ local function load_config()
   if cfg.tab_width < 1 then cfg.tab_width = 1 end
   if cfg.tab_width > 16 then cfg.tab_width = 16 end
 
+  cfg.click_top = math.floor(cfg.click_top)
+  if cfg.click_top < 0 then cfg.click_top = 0 end
+  if cfg.click_top > 16 then cfg.click_top = 16 end
+
   return cfg
 end
 
@@ -76,6 +86,7 @@ local S = {
   rows = nil,
   content_x = 0,
   bar_x = nil,
+  h = 0,
   line_count = 0,
   size_logged = false,
   build_error = false,
@@ -238,6 +249,7 @@ local function build(w, h, key)
   S.rows = rows
   S.content_x = content_x
   S.bar_x = bar_x
+  S.h = h
   S.line_count = count
   S.content_key = key
   S.content_dirty = false
@@ -278,6 +290,47 @@ local function draw(panel, h)
   local y = math.floor(pixel_row(cur.line - 1, S.line_count, px_rows) / 4)
   if y < 0 then y = 0 elseif y > h - 1 then y = h - 1 end
   panel:text(S.bar_x, y, CURSOR_CHAR, cfg.cursor_style)
+end
+
+-- scroll_to_click maps a click to the map row under the pointer and centers the
+-- editor on that line. on_event reports absolute screen coordinates, so the
+-- panel's top chrome is subtracted first (see PANEL_TOP_ROWS).
+local function scroll_to_click(ev)
+  local h = S.h
+  local count = S.line_count
+  if h <= 0 or count <= 0 then return end
+  if type(editor.scroll_to) ~= "function" then return end
+  if editor.file_path() == "" then return end
+
+  local row = ev.y - cfg.click_top
+  if row < 0 or row >= h then return end
+
+  local px_rows = h * 4
+  local px = row * 4
+  local line0
+  if count <= px_rows then
+    line0 = px
+  else
+    line0 = math.floor(px * count / px_rows)
+  end
+  if line0 > count - 1 then line0 = count - 1 end
+
+  local vp = editor.viewport()
+  local height = vp and vp.height or 1
+  if height < 1 then height = 1 end
+  local max_top = count - height
+  if max_top < 0 then max_top = 0 end
+  local top = line0 - math.floor(height / 2)
+  if top < 0 then top = 0 elseif top > max_top then top = max_top end
+
+  editor.scroll_to(top + 1)
+  redraw()
+end
+
+local function on_event(ev)
+  if ev and ev.type == "mouse" and ev.button == "left" then
+    scroll_to_click(ev)
+  end
 end
 
 local function render(panel)
@@ -390,7 +443,7 @@ local function show()
 end
 
 ttt.register({
-  bottom = { title = "Minimap", render = render },
+  bottom = { title = "Minimap", render = render, on_event = on_event },
   commands = {
     { id = "ttt-minimap.show", title = "Minimap: Show", handler = show },
     {
