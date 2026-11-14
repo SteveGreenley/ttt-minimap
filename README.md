@@ -1,5 +1,7 @@
 # ttt-minimap
 
+[![test](https://github.com/SteveGreenley/ttt-minimap/actions/workflows/test.yml/badge.svg)](https://github.com/SteveGreenley/ttt-minimap/actions/workflows/test.yml)
+
 A VS Code-style minimap for the [ttt](https://tttedit.dev) editor: a live,
 braille rendering of the active buffer in a narrow panel docked on the right.
 Each source line becomes one pixel row of Unicode braille (2×4 dots per terminal
